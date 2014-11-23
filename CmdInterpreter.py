@@ -13,6 +13,12 @@ OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
 BUFFER_SIZE = 2048
+Ballot = 0
+pid = 0
+BallotNum = (0, pid)
+AcceptNum = (0, 0)
+AcceptVal = 0
+receivedVals = [None] * len(IP)
 
 def queryServer(index):
     while True:
@@ -40,6 +46,10 @@ def waitForClient(index):
 	    if not data:
 	        CONN[index].close()
 	        break;
+	    if data.split('#')[0] == 'prepare':
+		bal = data.split('#')[1]
+		rid = data.split('#')[2]
+		global BallotNum
 
 def init_conn():
     print ("Initializing connection...")
@@ -56,10 +66,20 @@ def init_conn():
 def send2Server(msg, index):
     OUT_SOCK[index].send(msg)
 
+def send2all(msg):
+    for i in range(0, len(IP)):
+	send2Server(msg, i)
+
+def init_paxos(val):
+    global Ballot
+    Ballot += 1
+    send2all("prepare#" + str(Ballot) + '#' + str(pid)) 
+
 class CmdInterpreter(cmd.Cmd):
 
     def do_deposit(self, arg):
 	print (arg)
+	init_paxos(arg)
 
     def do_withdraw(self, arg):
 	print ("withdraw")
