@@ -12,6 +12,7 @@ PORT = [12345]
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
+BUFFER_SIZE = 2048
 
 def queryServer(index):
     while True:
@@ -25,11 +26,20 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
+    IN_SOCK[index].bind(('0.0.0.0', 12345))
+    while True:
 	print ("Waiting for client %d" % index)
-	IN_SOCK[index].bind(('0.0.0.0', 42709))
 	IN_SOCK[index].listen(1)
         CONN[index], addr = IN_SOCK[index].accept()
 	print addr
+	while True:
+            time.sleep(1)
+	    print "receiving data:"
+	    data = CONN[index].recv(BUFFER_SIZE)
+	    print "recieved data: ", data.split('#')
+	    if not data:
+	        CONN[index].close()
+	        break;
 
 def init_conn():
     print ("Initializing connection...")
@@ -44,7 +54,6 @@ def init_conn():
 	queryServer(i)
 
 def send2Server(msg, index):
-    print (msg)
     OUT_SOCK[index].send(msg)
 
 class CmdInterpreter(cmd.Cmd):
@@ -72,6 +81,6 @@ class CmdInterpreter(cmd.Cmd):
 
 if __name__ == '__main__':
     init_conn()
-    send2Server("hello", 0)
+    send2Server("prepare#0#100", 0)
     cmdInterp = CmdInterpreter()
     cmdInterp.cmdloop("Please enter cmd: \n\tdeposit [number] \n\twithdraw [number] \n\tbalance \n\tfail \n\tunfail \npress CTRL+D to quit.")
