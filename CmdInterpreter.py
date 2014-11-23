@@ -18,6 +18,8 @@ def queryServer(index):
         try:
     	    print "Querying server %d" % index
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
+	    print "Connect established"
+	    break;
         except:
 	    print "QueryServer Exception"
 	    time.sleep(2)
@@ -39,8 +41,10 @@ def init_conn():
     for i in range(0, len(IP)):
 	thread.start_new_thread(waitForClient, (i, ))
     for i in range(0, len(IP)):
-	thread.start_new_thread(queryServer, (i, ))
-	
+	queryServer(i)
+
+def send2Server(msg, index):
+    OUT_SOCK[index].send(msg)
 
 class CmdInterpreter(cmd.Cmd):
 
