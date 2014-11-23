@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 
 import cmd
-import readline
 import socket
 import thread
 import time
 
 log = []
-IP = ["169.231.6.155"]
+IP = ["128.111.46.83"]
 PORT = [12345]
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
 BUFFER_SIZE = 2048
-Ballot = 0
 pid = 0
-BallotNum = (0, pid)
+BallotNum = (0, 0)
 AcceptNum = (0, 0)
 AcceptVal = 0
 receivedVals = [None] * len(IP)
+AckNum = [None] * len(IP)
+AckHighVal = [None] * len(IP)
+AckHighBal = [None] * len(IP)
+AckHighId = [None] * len(IP)
+majority = 3
 
 def queryServer(index):
     while True:
@@ -50,6 +53,33 @@ def waitForClient(index):
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
 		global BallotNum
+		if ((BallotNum[0] < bal) or (BallotNum[0] == bal) and (BallotNum[0] < rid)):
+                    BallotNum = (bal, rid)
+                    send2server("ack#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
+            if data.split('#')[0] == "ack":
+                AckNum[index] += 1
+                bal = data.split('#')[3]
+                rid = data.split('#')[4]
+                if ((AckHighBal[index] < bal) or (AckHighBal[index] == bal) and (AckHighId[index] == rid)):
+                    AckHighVal[index] = data.split('#')[5]
+                if (AckNum[index] >= majority):
+                    receivedVal[index] = AckHighVal[index]
+                send2all("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
+            if data.split('#')[0] == "accept":
+                bal = data.split('#')[1]
+                rid = data.split('#')[2]
+		global BallotNum, AcceptNum, AcceptVal
+                if ((BallotNum[0] < bal) or (BallotNum[0] == bal) and (BallotNum[0] < rid)):
+                    AcceptNum = (bal, rid)
+                    AcceptVal = data.split('#')[3]
+                    if #first time
+                        send2all(data)
+                #if get accept from majority
+                    log.append(data.split('#')[3])
+                    send2all("decide#" + data.split('#')[3])
+            if data.split('#')[0] == "decide":
+                log.append(data.split('#')[3])
+                
 
 def init_conn():
     print ("Initializing connection...")
