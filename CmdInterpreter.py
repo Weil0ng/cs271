@@ -44,7 +44,7 @@ def init_conn():
 	queryServer(i)
 
 def send2Server(msg, index):
-    print ("sending $s" % msg)
+    print (msg)
     OUT_SOCK[index].send(msg)
 
 class CmdInterpreter(cmd.Cmd):
