@@ -16,12 +16,17 @@ pid = 0
 BallotNum = (0, 0)
 AcceptNum = (0, 0)
 AcceptVal = 0
-receivedVals = [None] * len(IP)
-AckNum = [None] * len(IP)
-AckHighVal = [None] * len(IP)
-AckHighBal = [None] * len(IP)
-AckHighId = [None] * len(IP)
+#receivedVals = [None] * len(IP)
+#AckNum = [None] * len(IP)
+AckNum = 0
+AccNum = 0
+#AckHighVal = [None] * len(IP)
+AckHighVal = 0
+#AckHighBal = [None] * len(IP)
+AckHighBal = (0, 0)
+#AckHighId = [None] * len(IP)
 majority = 3
+AccSent = False
 
 def queryServer(index):
     while True:
@@ -46,39 +51,48 @@ def waitForClient(index):
 	    print "receiving data:"
 	    data = CONN[index].recv(BUFFER_SIZE)
 	    print "recieved data: ", data.split('#')
+	    # if client dies
 	    if not data:
 	        CONN[index].close()
 	        break;
-	    if data.split('#')[0] == 'prepare':
+	    elif data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
 		global BallotNum
-		if ((BallotNum[0] < bal) or (BallotNum[0] == bal) and (BallotNum[0] < rid)):
+		# if Ballot < bal, set ballot, join
+		if (BallotNum[0] <= (bal, rid)):
                     BallotNum = (bal, rid)
-                    send2server("ack#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
-            if data.split('#')[0] == "ack":
-                AckNum[index] += 1
+                    send2Server("ack#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
+            elif data.split('#')[0] == "ack":
+		global AckNum, AckHighBal, AckHighVal, AcceptVal
+                AckNum += 1
                 bal = data.split('#')[3]
                 rid = data.split('#')[4]
-                if ((AckHighBal[index] < bal) or (AckHighBal[index] == bal) and (AckHighId[index] == rid)):
-                    AckHighVal[index] = data.split('#')[5]
-                if (AckNum[index] >= majority):
-                    receivedVal[index] = AckHighVal[index]
-                send2all("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
-            if data.split('#')[0] == "accept":
+                if (AckHighBal <= (bal, rid)):
+                    AckHighVal = data.split('#')[5]
+                if (AckNum >= majority):
+		    AcceptVal = AckHighVal
+                    send2All("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
+            elif data.split('#')[0] == "accept":
+		AccNum += 1
                 bal = data.split('#')[1]
                 rid = data.split('#')[2]
 		global BallotNum, AcceptNum, AcceptVal
-                if ((BallotNum[0] < bal) or (BallotNum[0] == bal) and (BallotNum[0] < rid)):
+                if (BallotNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
                     AcceptVal = data.split('#')[3]
-                    if #first time
-                        send2all(data)
+                    if not AccSent:
+			AccSent = True
+                        send2All(data)
                 #if get accept from majority
+		if (AccNum >= majority):
                     log.append(data.split('#')[3])
-                    send2all("decide#" + data.split('#')[3])
-            if data.split('#')[0] == "decide":
+                    send2All("decide#" + data.split('#')[3])
+            elif data.split('#')[0] == "decide":
                 log.append(data.split('#')[3])
+	    else:
+		print "Unknown Msg!"
+		print data
                 
 
 def init_conn():
@@ -96,14 +110,14 @@ def init_conn():
 def send2Server(msg, index):
     OUT_SOCK[index].send(msg)
 
-def send2all(msg):
+def send2All(msg):
     for i in range(0, len(IP)):
 	send2Server(msg, i)
 
 def init_paxos(val):
     global Ballot
     Ballot += 1
-    send2all("prepare#" + str(Ballot) + '#' + str(pid)) 
+    send2All("prepare#" + str(Ballot) + '#' + str(pid)) 
 
 class CmdInterpreter(cmd.Cmd):
 
