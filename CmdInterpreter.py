@@ -6,8 +6,9 @@ import thread
 import time
 
 log = []
-IP = ["128.111.46.83"]
-PORT = [12345]
+#IP = ["128.111.46.83", "127.0.0.1"]
+IP = ["127.0.0.1"]
+PORT = [1234]
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
@@ -26,9 +27,11 @@ AckHighVal = 0
 AckHighBal = (0, 0)
 #AckHighId = [None] * len(IP)
 majority = 3
+InitVal = 0
 AccSent = False
 
 def queryServer(index):
+    retry = 0
     while True:
         try:
     	    print ("Querying server %d" % index)
@@ -36,10 +39,12 @@ def queryServer(index):
 	    print ("Connect established")
 	    break;
         except:
-	    print ("QueryServer Exception")
+            retry += 1
+	    print ("QueryServer Exception, retry %d" % retry)
 	    time.sleep(1)
 
 def waitForClient(index):
+    global BallotNum, AcceptNum, AcceptVal, AckNum, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].bind(('0.0.0.0', 12345))
     while True:
 	print ("Waiting for client %d" % index)
@@ -58,13 +63,11 @@ def waitForClient(index):
 	    elif data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
-		global BallotNum
 		# if Ballot < bal, set ballot, join
 		if (BallotNum[0] <= (bal, rid)):
                     BallotNum = (bal, rid)
                     send2Server("ack#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
             elif data.split('#')[0] == "ack":
-		global AckNum, AckHighBal, AckHighVal, AcceptVal
                 AckNum += 1
                 bal = data.split('#')[3]
                 rid = data.split('#')[4]
@@ -72,12 +75,13 @@ def waitForClient(index):
                     AckHighVal = data.split('#')[5]
                 if (AckNum >= majority):
 		    AcceptVal = AckHighVal
+                    if (AcceptVal == 0):
+                        AcceptVal = InitVal
                     send2All("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
             elif data.split('#')[0] == "accept":
 		AccNum += 1
                 bal = data.split('#')[1]
                 rid = data.split('#')[2]
-		global BallotNum, AcceptNum, AcceptVal
                 if (BallotNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
                     AcceptVal = data.split('#')[3]
@@ -115,9 +119,14 @@ def send2All(msg):
 	send2Server(msg, i)
 
 def init_paxos(val):
-    global Ballot
-    Ballot += 1
-    send2All("prepare#" + str(Ballot) + '#' + str(pid)) 
+    global BallotNum, InitVal
+    BallotNum = (BallotNum[0] + 1, BallotNum[1])
+    InitVal = val
+    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1])
+    print msg
+    send2All(msg)
+
+
 
 class CmdInterpreter(cmd.Cmd):
 
@@ -144,7 +153,8 @@ class CmdInterpreter(cmd.Cmd):
 	print ("Goodbye!")
 
 if __name__ == '__main__':
+    #thread.start_new_thread(init_paxos, (20, ))
     init_conn()
     send2Server("prepare#0#100", 0)
-    cmdInterp = CmdInterpreter()
+    CmdInterp = CmdInterpreter()
     cmdInterp.cmdloop("Please enter cmd: \n\tdeposit [number] \n\twithdraw [number] \n\tbalance \n\tfail \n\tunfail \npress CTRL+D to quit.")
