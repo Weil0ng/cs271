@@ -6,8 +6,8 @@ import thread
 import time
 
 log = []
-IP = ["54.67.122.117"]
-PORT = [12345]
+IP = ["54.67.122.117", "54.67.122.118"]
+PORT = [12345, 12344]
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
@@ -35,7 +35,7 @@ def queryServer(index):
         try:
     	    print ("Querying server %d" % index)
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
-	    print ("Connect established")
+	    print ("Connect established with server %d" % index)
 	    break;
         except:
             retry += 1
@@ -45,7 +45,8 @@ def queryServer(index):
 def waitForClient(index):
     global BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    IN_SOCK[index].bind(('0.0.0.0', 12345))
+    print "binding socket %d to server %d" % (index, index)
+    IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
     while True:
 	print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
@@ -66,19 +67,24 @@ def waitForClient(index):
 		# if Ballot < bal, set ballot, join
 		if (AcceptNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
-                    send2Server("ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
+		    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal)
+		    print "ACK: %s to server %d" % (msg, index)
+                    send2Server(msg, index)
             elif data.split('#')[0] == "ack":
-                AckNum += 1
-                bal = data.split('#')[3]
-                rid = data.split('#')[4]
-                if (AckHighBal <= (bal, rid)):
-                    AckHighVal = data.split('#')[5]
-                if (AckNum >= majority):
-		    AcceptVal = AckHighVal
-                    if (AcceptVal == str(0)):
-                        AcceptVal = InitVal
-                    send2All("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
-		    AccSent = True
+		if not AccSent:
+                    AckNum += 1
+                    bal = data.split('#')[3]
+                    rid = data.split('#')[4]
+                    if (AckHighBal <= (bal, rid)):
+                        AckHighVal = data.split('#')[5]
+                    if (AckNum >= majority):
+		        AcceptVal = AckHighVal
+                        if (AcceptVal == str(0)):
+                            AcceptVal = InitVal
+			msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal)
+			print "ACC: %s to all" % msg
+                        send2All(msg)
+		        AccSent = True
             elif data.split('#')[0] == "accept":
 		AccNum += 1
                 bal = data.split('#')[1]
@@ -91,7 +97,9 @@ def waitForClient(index):
                         send2All(data)
                 #if get accept from majority
 		if (AccNum >= majority):
-                    send2All("decide#" + AcceptVal)
+		    msg = "decide#" + AcceptVal
+		    print "DEC: %s to all" % msg
+                    send2All(msg)
             elif data.split('#')[0] == "decide":
                 log.append(data.split('#')[1])
 		reset_local_state()
@@ -117,6 +125,7 @@ def send2Server(msg, index):
 
 def send2All(msg):
     for i in range(0, len(IP)):
+	print "sending msg to server %d" % i
 	send2Server(msg, i)
 
 def reset_local_state():
