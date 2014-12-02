@@ -64,9 +64,9 @@ def waitForClient(index):
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
 		# if Ballot < bal, set ballot, join
-		if (BallotNum[0] <= (bal, rid)):
-                    BallotNum = (bal, rid)
-                    send2Server("ack#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
+		if (AcceptNum <= (bal, rid)):
+                    AcceptNum = (bal, rid)
+                    send2Server("ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal), index)
             elif data.split('#')[0] == "ack":
                 AckNum += 1
                 bal = data.split('#')[3]
@@ -83,7 +83,7 @@ def waitForClient(index):
 		AccNum += 1
                 bal = data.split('#')[1]
                 rid = data.split('#')[2]
-                if (BallotNum <= (bal, rid)):
+                if (AcceptNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
                     AcceptVal = data.split('#')[3]
                     if not AccSent:
