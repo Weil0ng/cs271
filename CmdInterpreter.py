@@ -6,7 +6,7 @@ import thread
 import time
 
 log = []
-IP = ["128.111.46.83"]
+IP = ["54.67.122.117"]
 PORT = [12345]
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
