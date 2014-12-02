@@ -102,9 +102,9 @@ def waitForClient(index):
                     send2All(msg)
             elif data.split('#')[0] == "decide":
                 log.append(data.split('#')[1])
-		reset_local_state()
+                reset_local_state()
 	    else:
-		print "Unknown Msg!"
+                print "Unknown Msg!"
 		print data
                 
 
