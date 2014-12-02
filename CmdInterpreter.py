@@ -3,11 +3,13 @@
 import cmd
 import socket
 import thread
+import threading
 import time
 
 log = []
 IP = ["54.67.122.117", "54.67.122.118"]
 PORT = [12345, 12344]
+mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
@@ -57,9 +59,11 @@ def waitForClient(index):
 	    print "receiving data:"
 	    data = CONN[index].recv(BUFFER_SIZE)
 	    print "recieved data: ", data.split('#')
+            mutex.acquire()
 	    # if client dies
 	    if not data:
 	        CONN[index].close()
+		mutex.release()
 	        break;
 	    elif data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
@@ -106,6 +110,7 @@ def waitForClient(index):
 	    else:
                 print "Unknown Msg!"
 		print data
+	    mutex.release()
                 
 
 def init_conn():
