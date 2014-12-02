@@ -75,9 +75,10 @@ def waitForClient(index):
                     AckHighVal = data.split('#')[5]
                 if (AckNum >= majority):
 		    AcceptVal = AckHighVal
-                    if (AcceptVal == 0):
+                    if (AcceptVal == str(0)):
                         AcceptVal = InitVal
                     send2All("accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal))
+		    AccSent = True
             elif data.split('#')[0] == "accept":
 		AccNum += 1
                 bal = data.split('#')[1]
@@ -90,10 +91,10 @@ def waitForClient(index):
                         send2All(data)
                 #if get accept from majority
 		if (AccNum >= majority):
-                    log.append(AcceptVal)
                     send2All("decide#" + AcceptVal)
             elif data.split('#')[0] == "decide":
                 log.append(data.split('#')[1])
+		reset_local_state()
 	    else:
 		print "Unknown Msg!"
 		print data
@@ -117,6 +118,17 @@ def send2Server(msg, index):
 def send2All(msg):
     for i in range(0, len(IP)):
 	send2Server(msg, i)
+
+def reset_local_state():
+    global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent
+    AcceptNum = (0, 0)
+    AcceptVal = 0
+    AckNum = 0
+    AccNum = 0
+    AckHighVal = 0
+    AckHighBal = (0, 0)
+    InitVal = 0
+    AccSent = False 
 
 def init_paxos(val):
     global BallotNum, InitVal
