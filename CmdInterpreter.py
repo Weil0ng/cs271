@@ -43,12 +43,12 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global BallotNum, AcceptNum, AcceptVal, AckNum, AckHighBal, AckHighVal, AccepctVal
+    global BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     IN_SOCK[index].bind(('0.0.0.0', 12345))
     while True:
 	print ("Waiting for client %d" % index)
-	IN_SOCK[index].listen(1)
+	IN_SOCK[index].listen(0)
         CONN[index], addr = IN_SOCK[index].accept()
 	print addr
 	while True:
@@ -90,10 +90,10 @@ def waitForClient(index):
                         send2All(data)
                 #if get accept from majority
 		if (AccNum >= majority):
-                    log.append(data.split('#')[3])
-                    send2All("decide#" + data.split('#')[3])
+                    log.append(AcceptVal)
+                    send2All("decide#" + AcceptVal)
             elif data.split('#')[0] == "decide":
-                log.append(data.split('#')[3])
+                log.append(data.split('#')[1])
 	    else:
 		print "Unknown Msg!"
 		print data
@@ -126,7 +126,12 @@ def init_paxos(val):
     print msg
     send2All(msg)
 
-
+def get_balance():
+    global log
+    curBallance = 0
+    for item in log:
+	curBallance += float(item)
+    print curBallance
 
 class CmdInterpreter(cmd.Cmd):
 
@@ -138,7 +143,7 @@ class CmdInterpreter(cmd.Cmd):
 	print ("withdraw")
     
     def do_balance(self, arg):
-	print ("balance")
+	get_balance()
     
     def do_fail(self, arg):
         print ("fail a node")
