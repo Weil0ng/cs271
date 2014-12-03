@@ -67,7 +67,7 @@ def waitForClient(index):
 		mutex.release()
 	        break
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
-		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[0]), len(log))
+		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		continue
 	    else:
 		seqNum = int(data.split('#')[len(data.split('#'))-1])
@@ -113,9 +113,7 @@ def waitForClient(index):
                         send2All(msg)
 			DecSent = True
             elif data.split('#')[0] == "decide":
-		if seqNum == len(log):
-		    log.append(None)
-                log[seqNum]= float(data.split('#')[1])
+		log.append(float(data.split('#')[1]))
                 reset_local_state()
 	    else:
                 print "Unknown Msg!"
