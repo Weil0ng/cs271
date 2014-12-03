@@ -68,6 +68,7 @@ def waitForClient(index):
 	        break
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
+		mutex.release()
 		continue
 	    else:
 		seqNum = int(data.split('#')[len(data.split('#'))-1])
@@ -75,6 +76,7 @@ def waitForClient(index):
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
 		# if Ballot < bal, set ballot, join
+		print "bal: %s, rid: %s" % (bal, rid)
 		if (AcceptNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
 		    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal)
@@ -143,6 +145,7 @@ def send2All(msg):
 
 def reset_local_state():
     global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent, DecSent
+    print "reseting local state"
     AcceptNum = (0, 0)
     AcceptVal = 0
     AckNum = 0
