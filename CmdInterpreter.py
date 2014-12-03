@@ -70,7 +70,7 @@ def waitForClient(index):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[0]), len(log))
 		continue
 	    else:
-		seqNum = data.rsplit('#')[0]
+		seqNum = data.split('#')[len(data.split('#'))-1]
 	    if data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
