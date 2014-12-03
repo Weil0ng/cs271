@@ -113,7 +113,7 @@ def waitForClient(index):
                         send2All(msg)
 			DecSent = True
             elif data.split('#')[0] == "decide":
-		if seqNum == len(log)
+		if seqNum == len(log):
 		    log.append(None)
                 log[seqNum]= float(data.split('#')[1])
                 reset_local_state()
