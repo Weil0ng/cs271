@@ -30,6 +30,7 @@ AckHighBal = (0, 0)
 majority = 1
 InitVal = 0
 AccSent = False
+DecSent = False
 
 def queryServer(index):
     retry = 0
@@ -45,7 +46,7 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, AckHighBal, AckHighVal, AccepctVal
+    global BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
@@ -90,20 +91,22 @@ def waitForClient(index):
                         send2All(msg)
 		        AccSent = True
             elif data.split('#')[0] == "accept":
-		AccNum += 1
-                bal = data.split('#')[1]
-                rid = data.split('#')[2]
-                if (AcceptNum <= (bal, rid)):
-                    AcceptNum = (bal, rid)
-                    AcceptVal = data.split('#')[3]
-                    if not AccSent:
-			AccSent = True
-                        send2All(data)
-                #if get accept from majority
-		if (AccNum >= majority):
-		    msg = "decide#" + AcceptVal
-		    print "DEC: %s to all" % msg
-                    send2All(msg)
+		if not DecSent:
+		    AccNum += 1
+                    bal = data.split('#')[1]
+                    rid = data.split('#')[2]
+                    if (AcceptNum <= (bal, rid)):
+                        AcceptNum = (bal, rid)
+                        AcceptVal = data.split('#')[3]
+                        if not AccSent:
+			    AccSent = True
+                            send2All(data)
+                    #if get accept from majority
+		    if (AccNum >= majority):
+		        msg = "decide#" + AcceptVal
+		        print "DEC: %s to all" % msg
+                        send2All(msg)
+			DecSent = True
             elif data.split('#')[0] == "decide":
                 log.append(data.split('#')[1])
                 reset_local_state()
