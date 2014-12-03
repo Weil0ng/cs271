@@ -58,8 +58,7 @@ def waitForClient(index):
             time.sleep(1)
 	    print "receiving data:"
 	    data = CONN[index].recv(BUFFER_SIZE)
-	    print "recieved data: ", data.split('#')
-            mutex.acquire()
+	    print "recieved data %s from server %s: " % (data.split('#'), index)
 	    # if client dies
 	    if not data:
 	        CONN[index].close()
@@ -110,7 +109,6 @@ def waitForClient(index):
 	    else:
                 print "Unknown Msg!"
 		print data
-	    mutex.release()
                 
 
 def init_conn():
@@ -126,7 +124,9 @@ def init_conn():
 	queryServer(i)
 
 def send2Server(msg, index):
+    mutex.acquire()
     OUT_SOCK[index].send(msg)
+    mutex.release()
 
 def send2All(msg):
     for i in range(0, len(IP)):
