@@ -2,4 +2,4 @@
 
 git checkout -f master
 git pull
-./replace
+./replace.sh
