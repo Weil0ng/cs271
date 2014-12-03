@@ -65,8 +65,13 @@ def waitForClient(index):
 	    if not data:
 	        CONN[index].close()
 		mutex.release()
-	        break;
-	    elif data.split('#')[0] == 'prepare':
+	        break
+	    elif not data.rsplit('#')[0] == len(log):
+		print "Sequence num not match! Aborting msg!"
+		continue
+	    else:
+		seqNum = data.rsplit('#')[0]
+	    if data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
 		# if Ballot < bal, set ballot, join
@@ -108,7 +113,7 @@ def waitForClient(index):
                         send2All(msg)
 			DecSent = True
             elif data.split('#')[0] == "decide":
-                log.append(data.split('#')[1])
+                log[int(seqNum)]= float(data.split('#')[1])
                 reset_local_state()
 	    else:
                 print "Unknown Msg!"
@@ -129,7 +134,7 @@ def init_conn():
 	queryServer(i)
 
 def send2Server(msg, index):
-    OUT_SOCK[index].send(msg)
+    OUT_SOCK[index].send(msg + "#" + str(len(log)))
 
 def send2All(msg):
     for i in range(0, len(IP)):
@@ -137,7 +142,7 @@ def send2All(msg):
 	send2Server(msg, i)
 
 def reset_local_state():
-    global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent
+    global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent, DecSent
     AcceptNum = (0, 0)
     AcceptVal = 0
     AckNum = 0
@@ -145,7 +150,8 @@ def reset_local_state():
     AckHighVal = 0
     AckHighBal = (0, 0)
     InitVal = 0
-    AccSent = False 
+    AccSent = False
+    DecSent = False 
 
 def init_paxos(val):
     global BallotNum, InitVal
