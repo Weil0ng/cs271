@@ -66,7 +66,7 @@ def waitForClient(index):
 	        CONN[index].close()
 		mutex.release()
 	        break
-	    elif not data.rsplit('#')[0] == str(len(log)):
+	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[0]), len(log))
 		continue
 	    else:
