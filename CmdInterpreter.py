@@ -70,7 +70,7 @@ def waitForClient(index):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[0]), len(log))
 		continue
 	    else:
-		seqNum = data.split('#')[len(data.split('#'))-1]
+		seqNum = int(data.split('#')[len(data.split('#'))-1])
 	    if data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
@@ -113,7 +113,9 @@ def waitForClient(index):
                         send2All(msg)
 			DecSent = True
             elif data.split('#')[0] == "decide":
-                log[int(seqNum)]= float(data.split('#')[1])
+		if seqNum == len(log)
+		    log.append(None)
+                log[seqNum]= float(data.split('#')[1])
                 reset_local_state()
 	    else:
                 print "Unknown Msg!"
