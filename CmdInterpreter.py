@@ -64,7 +64,7 @@ def waitForClient(index):
 	    # if client dies
 	    if not data:
 	        CONN[index].close()
-		thread.start_new_thread(waitForClient, (index, ))
+		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
