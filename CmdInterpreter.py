@@ -27,7 +27,7 @@ AckHighVal = 0
 #AckHighBal = [None] * len(IP)
 AckHighBal = (0, 0)
 #AckHighId = [None] * len(IP)
-majority = 1
+majority = 2
 InitVal = 0
 AccSent = False
 DecSent = False
@@ -39,6 +39,7 @@ def queryServer(index):
     	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
 	    print ("Connect established with server %s" % IP[index])
+	    send2Server("syncreq", index)	    
 	    break;
         except:
             retry += 1
@@ -68,12 +69,34 @@ def waitForClient(index):
 		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
+	    # if client asks for sync
+	    elif data.split('#')[0] == 'syncreq':
+		msg = 'syncack'
+		for item in log:
+		    if len(msg) + len(str(item)) + 1 > BUFFER_SIZE:
+			send2Server(msg, index)
+			msg = 'syncack'
+		    msg += '#'
+		    msg += str(item)
+		send2Server(msg, index)
+		mutex.release()
+		continue
+	    # if client answers for sync
+	    elif data.split('#')[0] == 'syncack':
+		for item in data.split('#'):
+		    if item == 'syncack':
+			continue
+		    log.append(float(item))
+		mutex.release()
+		continue
+	    # if the msg is stale
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		mutex.release()
 		continue
 	    else:
 		seqNum = int(data.split('#')[len(data.split('#'))-1])
+	    # if PAXOS msg
 	    if data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
