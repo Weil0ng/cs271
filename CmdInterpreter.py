@@ -36,9 +36,9 @@ def queryServer(index):
     retry = 0
     while True:
         try:
-    	    print ("Querying server %d" % index)
+    	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
-	    print ("Connect established with server %d" % index)
+	    print ("Connect established with server %s" % IP[index])
 	    break;
         except:
             retry += 1
@@ -64,6 +64,7 @@ def waitForClient(index):
 	    # if client dies
 	    if not data:
 	        CONN[index].close()
+                OUT_SOCK[index] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
