@@ -31,6 +31,7 @@ majority = 2
 InitVal = 0
 AccSent = False
 DecSent = False
+Sync = False
 
 def queryServer(index):
     retry = 0
@@ -39,7 +40,11 @@ def queryServer(index):
     	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
 	    print ("Connect established with server %s" % IP[index])
-	    send2Server("syncreq", index)	    
+	    mutex.acquire()
+	    if (Sync == False) and (index != 0):
+		Sync = True
+	        send2Server("syncreq", index)	    
+	    mutex.release()
 	    break;
         except:
             retry += 1
