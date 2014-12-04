@@ -35,16 +35,15 @@ Sync = False
 
 def queryServer(index):
     retry = 0
+    global Sync
     while True:
         try:
     	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
 	    print ("Connect established with server %s" % IP[index])
-	    mutex.acquire()
 	    if (Sync == False) and (index != 0):
 		Sync = True
 	        send2Server("syncreq", index)	    
-	    mutex.release()
 	    break;
         except:
             retry += 1
