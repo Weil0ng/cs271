@@ -43,7 +43,9 @@ def queryServer(index):
 	    print ("Connect established with server %s" % IP[index])
 	    if (Sync == False) and (index != 0):
 		Sync = True
+		mutex.acquire()
 	        send2Server("syncreq", index)	    
+		mutex.release()
 	    break;
         except:
             retry += 1
