@@ -7,8 +7,8 @@ import threading
 import time
 
 log = []
-IP = ["54.67.122.117", "54.67.122.118"]
-PORT = [12345, 12344]
+IP = ["0.0.0.0", "54.67.122.117", "54.67.122.118"]
+PORT = [12000, 12345, 12344]
 mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
@@ -64,6 +64,7 @@ def waitForClient(index):
 	    # if client dies
 	    if not data:
 	        CONN[index].close()
+		thread.start_new_thread(waitForClient, (index, ))
 		mutex.release()
 	        break
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
@@ -178,7 +179,7 @@ class CmdInterpreter(cmd.Cmd):
 	init_paxos(arg)
 
     def do_withdraw(self, arg):
-	print ("withdraw")
+	init_paxos(-1.0*int(arg))
     
     def do_balance(self, arg):
 	get_balance()
