@@ -7,6 +7,8 @@ import threading
 import time
 
 log = []
+
+#comm vars
 IP = ["0.0.0.0", "54.67.122.117", "54.67.122.118"]
 PORT = [12000, 12345, 12344]
 pid = 0
@@ -14,26 +16,26 @@ mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
+
+#Cross instance vars
 BUFFER_SIZE = 2048
-BallotNum = (0, 0)
-AcceptNum = (0, 0)
-AcceptVal = 0
-#receivedVals = [None] * len(IP)
-#AckNum = [None] * len(IP)
-AckNum = 0
-AccNum = 0
-#AckHighVal = [None] * len(IP)
-AckHighVal = 0
-#AckHighBal = [None] * len(IP)
-AckHighBal = (0, 0)
-#AckHighId = [None] * len(IP)
 majority = 2
 live = 0
 liveness = [False] * len(IP)
+halt = False
+Sync = False
+
+#PAXOS instance vars
+BallotNum = (0, 0)
+AcceptNum = (0, 0)
+AcceptVal = 0
+AckNum = 0
+AccNum = 0
+AckHighVal = 0
+AckHighBal = (0, 0)
 InitVal = 0
 AccSent = False
 DecSent = False
-Sync = False
 
 def queryServer(index):
     retry = 0
@@ -60,19 +62,34 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global mutex, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
+    global mutex, halt, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
     while True:
+	if halt:
+	    IN_SOCK[index].close()
+	    break
 	print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
         CONN[index], addr = IN_SOCK[index].accept()
+	CONN[index].setblocking(0)
 	print addr
 	while True:
-            time.sleep(1)
-	    print "receiving data:"
-	    data = CONN[index].recv(BUFFER_SIZE)
+	    while True:
+		if halt:
+		    break
+		try:
+	            data = CONN[index].recv(BUFFER_SIZE)
+		    break
+	        except:
+		    time.sleep(1)
+	    if halt:
+		print "CLOSE %d" % index
+                CONN[index].close()
+		if liveness[index]:
+		    OUT_SOCK[index].close()
+                break
 	    print "recieved data %s from server %s: " % (data.split('#'), index)
     	    mutex.acquire()
 	    # if client dies
@@ -162,7 +179,6 @@ def waitForClient(index):
 		print data
     	    mutex.release()
                 
-
 def init_conn():
     print ("Initializing connection...")
     index = 0
@@ -179,10 +195,13 @@ def init_conn():
 	time.sleep(1)
 
 def send2Server(msg, index):
-    if msg.split('#')[0] == 'syncreq' or msg.split('#')[0] == 'syncack':
-	OUT_SOCK[index].send(msg)
-    else:
-        OUT_SOCK[index].send(msg + "#" + str(len(log)))
+    try:
+        if msg.split('#')[0] == 'syncreq' or msg.split('#')[0] == 'syncack':
+	    OUT_SOCK[index].send(msg)
+        else:
+            OUT_SOCK[index].send(msg + "#" + str(len(log)))
+    except:
+	return
 
 def send2All(msg):
     for i in range(0, len(IP)):
@@ -221,20 +240,45 @@ def get_balance():
 class CmdInterpreter(cmd.Cmd):
 
     def do_deposit(self, arg):
-	print (arg)
-	init_paxos(arg)
+	global halt
+	if not halt:
+	    init_paxos(arg)
 
     def do_withdraw(self, arg):
-	init_paxos(-1.0*int(arg))
+	global halt
+	if not halt:
+	    init_paxos(-1.0*int(arg))
     
     def do_balance(self, arg):
-	get_balance()
+	global halt
+	if not halt:
+	    get_balance()
     
+    def do_print(self, arg):
+	for item in log:
+	    if float(item) >= 0:
+		print "Deposit ", item
+	    else:
+		print "Withdraw", str(-1.0*float(item))
+
     def do_fail(self, arg):
-        print ("fail a node")
+	global halt
+	if not halt:
+	    halt = True
+	    del log[:]
+            print ("Oops! This server is not working!")	
 
     def do_unfail(self, arg):
-	print ("recover a node")
+	global halt, Sync
+	if halt:
+	    for i in liveness:
+	        i = False
+	    live = 0
+	    Sync = False
+	    reset_local_state()
+	    halt = False
+	    init_conn()
+	    print ("Wala! The node recovers!")
 
     def do_EOF(self, arg):
 	return (True)
@@ -247,4 +291,4 @@ if __name__ == '__main__':
     init_conn()
     #send2Server("prepare#0#100", 0)
     CmdInterp = CmdInterpreter()
-    CmdInterp.cmdloop("Please enter cmd: \n\tdeposit [number] \n\twithdraw [number] \n\tbalance \n\tfail \n\tunfail \npress CTRL+D to quit.")
+    CmdInterp.cmdloop("Please enter cmd: \n\tdeposit [number] \n\twithdraw [number] \n\tbalance \n\tfail \n\tunfail \n\tprint \npress CTRL+D to quit.")
