@@ -29,6 +29,7 @@ AckHighBal = (0, 0)
 #AckHighId = [None] * len(IP)
 majority = 2
 live = 0
+liveness = [False] * len(IP)
 InitVal = 0
 AccSent = False
 DecSent = False
@@ -42,6 +43,7 @@ def queryServer(index):
     	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
 	    print ("Connect established with server %s" % IP[index])
+	    liveness[index] = True
 	    mutex.acquire()
 	    live += 1
 	    if ((Sync is False) and (index == pid%(len(IP) - 1) + 1)):
@@ -78,6 +80,7 @@ def waitForClient(index):
 	        CONN[index].close()
                 OUT_SOCK[index] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		print "Server %s is dead!" % IP[index]
+		liveness[index] = False
 		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
@@ -183,8 +186,9 @@ def send2Server(msg, index):
 
 def send2All(msg):
     for i in range(0, len(IP)):
-	print "sending msg to server %d" % i
-	send2Server(msg, i)
+	if liveness[i]:
+	    print "sending msg to server %d" % i
+	    send2Server(msg, i)
 
 def reset_local_state():
     global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent, DecSent
