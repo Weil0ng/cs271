@@ -73,6 +73,7 @@ def waitForClient(index):
 	print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
         CONN[index], addr = IN_SOCK[index].accept()
+	liveness[index] = True
 	CONN[index].setblocking(0)
 	print addr
 	while True:
@@ -195,13 +196,15 @@ def init_conn():
 	time.sleep(1)
 
 def send2Server(msg, index):
-    try:
-        if msg.split('#')[0] == 'syncreq' or msg.split('#')[0] == 'syncack':
-	    OUT_SOCK[index].send(msg)
-        else:
-            OUT_SOCK[index].send(msg + "#" + str(len(log)))
-    except:
-	return
+    while liveness[index]:
+        try:
+	    if msg.split('#')[0] == 'syncreq' or msg.split('#')[0] == 'syncack':
+                OUT_SOCK[index].send(msg)
+            else:
+                OUT_SOCK[index].send(msg + "#" + str(len(log)))
+	    break
+	except:
+	    continue
 
 def send2All(msg):
     for i in range(0, len(IP)):
