@@ -84,7 +84,7 @@ def waitForClient(index):
 	            data = CONN[index].recv(BUFFER_SIZE)
 		    break
 	        except:
-		    time.sleep(1)
+		    time.sleep(0.1)
 	    if halt:
 		print "CLOSE %d" % index
                 CONN[index].close()
