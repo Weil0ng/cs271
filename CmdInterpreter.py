@@ -9,12 +9,12 @@ import time
 log = []
 IP = ["0.0.0.0", "54.67.122.117", "54.67.122.118"]
 PORT = [12000, 12345, 12344]
+pid = 0
 mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
 BUFFER_SIZE = 2048
-pid = 0
 BallotNum = (0, 0)
 AcceptNum = (0, 0)
 AcceptVal = 0
@@ -28,6 +28,7 @@ AckHighVal = 0
 AckHighBal = (0, 0)
 #AckHighId = [None] * len(IP)
 majority = 2
+live = 0
 InitVal = 0
 AccSent = False
 DecSent = False
@@ -35,17 +36,21 @@ Sync = False
 
 def queryServer(index):
     retry = 0
-    global Sync
+    global Sync, live, mutex
     while True:
         try:
     	    print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
 	    print ("Connect established with server %s" % IP[index])
-	    if (Sync == False) and (index != 0):
+	    mutex.acquire()
+	    live += 1
+	    if ((Sync is False) and (index == pid%(len(IP) - 1) + 1)):
 		Sync = True
-		mutex.acquire()
-	        send2Server("syncreq", index)	    
-		mutex.release()
+	        mutex.release()
+		print "SYNC: %s" % IP[index]
+	        send2Server("syncreq", index)
+	    else:	    
+	        mutex.release()
 	    break;
         except:
             retry += 1
@@ -53,7 +58,7 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
+    global mutex, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
@@ -72,6 +77,7 @@ def waitForClient(index):
 	    if not data:
 	        CONN[index].close()
                 OUT_SOCK[index] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		print "Server %s is dead!" % IP[index]
 		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
@@ -164,7 +170,10 @@ def init_conn():
     for i in range(0, len(IP)):
 	thread.start_new_thread(waitForClient, (i, ))
     for i in range(0, len(IP)):
-	queryServer(i)
+	thread.start_new_thread(queryServer, (i, ))
+    while (live < majority):
+	print "live: %d" % live
+	time.sleep(1)
 
 def send2Server(msg, index):
     OUT_SOCK[index].send(msg + "#" + str(len(log)))
