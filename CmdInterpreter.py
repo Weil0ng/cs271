@@ -16,6 +16,7 @@ mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
+POLL_RATE = 1
 
 #Cross instance vars
 BUFFER_SIZE = 2048
@@ -84,7 +85,7 @@ def waitForClient(index):
 	            data = CONN[index].recv(BUFFER_SIZE)
 		    break
 	        except:
-		    time.sleep(0.001)
+		    time.sleep(float(1/POLL_RATE))
 	    if halt:
 		print "CLOSE %d" % index
                 CONN[index].close()
