@@ -123,6 +123,7 @@ def waitForClient(index):
 		    log.append(float(item))
 		mutex.release()
 		continue
+	    # PAXOS msg
 	    # if the msg is stale
 	    elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
@@ -130,7 +131,6 @@ def waitForClient(index):
 		continue
 	    else:
 		seqNum = int(data.split('#')[len(data.split('#'))-1])
-	    # if PAXOS msg
 	    if data.split('#')[0] == 'prepare':
 		bal = data.split('#')[1]
 		rid = data.split('#')[2]
@@ -138,7 +138,7 @@ def waitForClient(index):
 		print "bal: %s, rid: %s" % (bal, rid)
 		if (AcceptNum <= (bal, rid)):
                     AcceptNum = (bal, rid)
-		    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal)
+		    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
 		    print "ACK: %s to server %d" % (msg, index)
                     send2Server(msg, index)
             elif data.split('#')[0] == "ack":
@@ -152,7 +152,7 @@ def waitForClient(index):
 		        AcceptVal = AckHighVal
                         if (AcceptVal == str(0)):
                             AcceptVal = InitVal
-			msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal)
+			msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
 			print "ACC: %s to all" % msg
                         send2All(msg)
 		        AccSent = True
@@ -169,7 +169,7 @@ def waitForClient(index):
                             send2All(data)
                     #if get accept from majority
 		    if (AccNum >= majority):
-		        msg = "decide#" + AcceptVal
+		        msg = "decide#" + AcceptVal + '#' + str(seqNum)
 		        print "DEC: %s to all" % msg
                         send2All(msg)
 			DecSent = True
@@ -199,10 +199,7 @@ def init_conn():
 def send2Server(msg, index):
     while liveness[index]:
         try:
-	    if msg.split('#')[0] == 'syncreq' or msg.split('#')[0] == 'syncack':
-                OUT_SOCK[index].send(msg)
-            else:
-                OUT_SOCK[index].send(msg + "#" + str(len(log)))
+            OUT_SOCK[index].send(msg)
 	    break
 	except:
 	    continue
@@ -230,7 +227,8 @@ def init_paxos(val):
     global BallotNum, InitVal
     BallotNum = (BallotNum[0] + 1, BallotNum[1])
     InitVal = val
-    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1])
+    # attach with seq num
+    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
     print msg
     send2All(msg)
 
