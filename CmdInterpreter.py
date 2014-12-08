@@ -16,7 +16,7 @@ mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 100
+POLL_RATE = 1000
 
 #Cross instance vars
 BUFFER_SIZE = 2048
@@ -64,7 +64,7 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global mutex, halt, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
+    global mutex, halt, live, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     #print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
