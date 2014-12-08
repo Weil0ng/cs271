@@ -16,7 +16,7 @@ mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 1000
+POLL_RATE = 1
 
 #Cross instance vars
 BUFFER_SIZE = 2048
@@ -50,7 +50,7 @@ def queryServer(index):
 	    mutex.acquire()
 	    live += 1
 	    print "# of live server: %d" % live
-	    if ((Sync is False) and (index == pid%(len(IP) - 1) + 1)):
+	    if Sync is False:
 		Sync = True
 	        mutex.release()
 		print "SYNC: %s" % IP[index]
