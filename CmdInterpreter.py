@@ -72,6 +72,9 @@ def waitForClient(index):
     while True:
 	if halt:
 	    IN_SOCK[index].close()
+	    if liveness[index]:
+		liveness[index] = False
+		live = live - 1
 	    break
 	#print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
