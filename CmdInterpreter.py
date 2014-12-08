@@ -7,20 +7,20 @@ import threading
 import time
 
 log = []
+IP = ["0.0.0.0", "54.77.101.231", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
+PORT = [12000, 12345, 12344, 12343, 12342]
+pid = 0
 
 #comm vars
-IP = ["0.0.0.0", "54.67.122.117", "54.67.122.118"]
-PORT = [12000, 12345, 12344]
-pid = 0
 mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 1
+POLL_RATE = 100
 
 #Cross instance vars
 BUFFER_SIZE = 2048
-majority = 2
+majority = 3
 live = 0
 liveness = [False] * len(IP)
 halt = False
@@ -43,9 +43,9 @@ def queryServer(index):
     global Sync, live, mutex
     while True:
         try:
-    	    print ("Querying server %s" % IP[index])
+    	    #print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
-	    print ("Connect established with server %s" % IP[index])
+	    #print ("Connect established with server %s" % IP[index])
 	    liveness[index] = True
 	    mutex.acquire()
 	    live += 1
@@ -59,19 +59,19 @@ def queryServer(index):
 	    break;
         except:
             retry += 1
-	    print ("QueryServer Exception, retry %d" % retry)
+	    #print ("QueryServer Exception, retry %d" % retry)
 	    time.sleep(1)
 
 def waitForClient(index):
     global mutex, halt, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print "binding socket %d to server %d" % (index, index)
+    #print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
     while True:
 	if halt:
 	    IN_SOCK[index].close()
 	    break
-	print ("Waiting for client %d" % index)
+	#print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
         CONN[index], addr = IN_SOCK[index].accept()
 	liveness[index] = True
