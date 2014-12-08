@@ -53,13 +53,13 @@ def queryServer(index):
 	    if (Sync is False) and (index != 0):
 		Sync = True
 	        mutex.release()
-		print "SYNC: %s" % IP[index]
+		#print "SYNC: %s" % IP[index]
 	        send2Server("syncreq", index)
 	    else:	    
 	        mutex.release()
 	    break;
         except:
-            retry += 1
+            #retry += 1
 	    #print ("QueryServer Exception, retry %d" % retry)
 	    time.sleep(1)
 
@@ -71,6 +71,7 @@ def waitForClient(index):
     # daemon loop
     while True:
 	if halt:
+	    IN_SOCK[index].shutdown()
 	    IN_SOCK[index].close()
 	    if liveness[index]:
 		liveness[index] = False
@@ -223,7 +224,7 @@ def send2Server(msg, index):
 def send2All(msg):
     for i in range(0, len(IP)):
 	if liveness[i]:
-	    print "sending msg to server %d" % i
+	    #print "sending msg to server %d" % i
 	    send2Server(msg, i)
 
 def reset_local_state():
@@ -296,7 +297,7 @@ class CmdInterpreter(cmd.Cmd):
 	    reset_local_state()
 	    halt = False
 	    init_conn()
-	    print ("Wala! The node recovers!")
+	    print ("Wala! This server recovered!")
 
     def do_EOF(self, arg):
 	return (True)
