@@ -64,7 +64,7 @@ def queryServer(index):
 	    time.sleep(1)
 
 def waitForClient(index):
-    global mutex, halt, live, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal
+    global mutex, halt, live, liveness, BallotNum, AcceptNum, AcceptVal, AckNum, AccNum, AccSent, DecSent, AckHighBal, AckHighVal, AccepctVal, InitVal
     IN_SOCK[index].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     #print "binding socket %d to server %d" % (index, index)
     IN_SOCK[index].bind(('0.0.0.0', PORT[index]))
@@ -86,7 +86,7 @@ def waitForClient(index):
 		if halt:
 		    break
 		try:
-	            data = CONN[index].recv(BUFFER_SIZE)
+	            raw_data = CONN[index].recv(BUFFER_SIZE)
 		    break
 	        except:
 		    time.sleep(float(1/POLL_RATE))
@@ -97,9 +97,8 @@ def waitForClient(index):
 		if liveness[index]:
 		    OUT_SOCK[index].close()
                 break
-	    print "recieved data %s from server %s: " % (data.split('#'), index)
 	    # if client dies
-	    if not data:
+	    if not raw_data:
 	        CONN[index].close()
                 OUT_SOCK[index] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		print "Server %s is dead!" % IP[index]
@@ -110,9 +109,10 @@ def waitForClient(index):
 		    print "Warning: not enough live servers!"
 		thread.start_new_thread(queryServer, (index, ))
 	        break
-	    for data in data.split('|'):
+	    for data in raw_data.split('|'):
 		if data == str(''):
 		    continue
+	    	print "recieved data %s from server %s: " % (data.split('#'), index)
                 mutex.acquire()
 	        # if client asks for sync
 	        if data.split('#')[0] == 'syncreq':
@@ -158,7 +158,7 @@ def waitForClient(index):
                         	AckHighVal = data.split('#')[5]
                     	    if (AckNum >= majority):
 		        	AcceptVail = AckHighVal
-                        	if (AcceptVal == str(0)):
+                        	if (str(AcceptVal) == str(0)):
                             	    AcceptVal = InitVal
 				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
 				print "ACC: %s to all" % msg
