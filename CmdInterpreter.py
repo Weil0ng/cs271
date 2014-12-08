@@ -50,7 +50,7 @@ def queryServer(index):
 	    mutex.acquire()
 	    live += 1
 	    print "# of live server: %d" % live
-	    if Sync is False:
+	    if (Sync is False) and (index != 0):
 		Sync = True
 	        mutex.release()
 		print "SYNC: %s" % IP[index]
@@ -112,8 +112,8 @@ def waitForClient(index):
 	    for data in raw_data.split('|'):
 		if data == str(''):
 		    continue
-	    	print "recieved data %s from server %s: " % (data.split('#'), index)
                 mutex.acquire()
+	    	print "recieved data %s from server %s: " % (data.split('#'), index)
 	        # if client asks for sync
 	        if data.split('#')[0] == 'syncreq':
 		    msg = 'syncack'
