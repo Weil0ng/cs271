@@ -27,7 +27,7 @@ halt = False
 Sync = False
 
 #PAXOS instance vars
-BallotNum = (0, 0)
+BallotNum = (0, pid)
 AcceptNum = (0, 0)
 AcceptVal = 0
 AckNum = 0
@@ -155,9 +155,10 @@ def waitForClient(index):
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
                     	    if (AckHighBal <= (bal, rid)):
+				AckHighBal = (bal, rid)
                         	AckHighVal = data.split('#')[5]
                     	    if (AckNum >= majority):
-		        	AcceptVail = AckHighVal
+		        	AcceptVal = AckHighVal
                         	if (str(AcceptVal) == str(0)):
                             	    AcceptVal = InitVal
 				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
