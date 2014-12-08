@@ -49,6 +49,7 @@ def queryServer(index):
 	    liveness[index] = True
 	    mutex.acquire()
 	    live += 1
+	    print "# of live server: %d" % live
 	    if ((Sync is False) and (index == pid%(len(IP) - 1) + 1)):
 		Sync = True
 	        mutex.release()
@@ -100,6 +101,10 @@ def waitForClient(index):
                 OUT_SOCK[index] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		print "Server %s is dead!" % IP[index]
 		liveness[index] = False
+		live = live - 1
+		print "# of live server: %d" % live
+		if live < majority:
+		    print "Warning: not enough live servers!"
 		thread.start_new_thread(queryServer, (index, ))
 		mutex.release()
 	        break
@@ -198,7 +203,6 @@ def init_conn():
     for i in range(0, len(IP)):
 	thread.start_new_thread(queryServer, (i, ))
     while (live < majority):
-	print "live: %d" % live
 	time.sleep(1)
 
 def send2Server(msg, index):
