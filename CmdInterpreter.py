@@ -111,6 +111,8 @@ def waitForClient(index):
 		thread.start_new_thread(queryServer, (index, ))
 	        break
 	    for data in data.split('|'):
+		if data == str(''):
+		    continue
                 mutex.acquire()
 	        # if client asks for sync
 	        if data.split('#')[0] == 'syncreq':
