@@ -174,6 +174,11 @@ def waitForClient(index):
                         send2All(msg)
 			DecSent = True
             elif data.split('#')[0] == "decide":
+		if InitVal != 0:
+		    if float(InitVal) == float(data.split('#')[1]):
+			print "SUCCESS"
+		    else:
+			print "FAILURE"
 		log.append(float(data.split('#')[1]))
                 reset_local_state()
 	    else:
