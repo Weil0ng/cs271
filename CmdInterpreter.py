@@ -71,7 +71,6 @@ def waitForClient(index):
     # daemon loop
     while True:
 	if halt:
-	    IN_SOCK[index].shutdown()
 	    IN_SOCK[index].close()
 	    if liveness[index]:
 		liveness[index] = False
