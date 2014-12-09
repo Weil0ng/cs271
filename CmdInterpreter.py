@@ -7,9 +7,9 @@ import threading
 import time
 
 log = []
-IP = ["0.0.0.0", "54.67.122.117", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
-PORT = [12000, 12345, 12335, 12334, 12333]
-pid = 1
+IP = ["0.0.0.0", "54.77.101.231", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
+PORT = [12000, 12345, 12344, 12343, 12342]
+pid = 0
 DEC_H = []
 
 #comm vars
@@ -32,12 +32,12 @@ BallotNum = (0, pid)
 AcceptNum = (0, 0)
 AcceptVal = 0
 AckNum = 0
-AccNum = 0
+dict AccNum = {}
 AckHighVal = 0
 AckHighBal = (0, 0)
 InitVal = 0
-AccSent = False
-DecSent = False
+dict AccSent = {}
+dict DecSent = {}
 
 def inHistory(ballot):
     for item in DEC_H:
@@ -178,23 +178,29 @@ def waitForClient(index):
                         	send2All(msg)
 		        	#AccSent = True
             	    elif data.split('#')[0] == "accept":
-			#if not DecSent:
-		    	AccNum += 1
-                    	bal = data.split('#')[1]
-                    	rid = data.split('#')[2]
-                    	if (seqNum == '*' or AcceptNum <= (bal, rid)):
-			    if (AcceptNum <= (bal, rid)):
-                                AcceptNum = (bal, rid)
-                                AcceptVal = data.split('#')[3]
-                            #if not AccSent:
-			        #AccSent = True
-                            send2All(data)
+			if not tag in DecSent:
+			    DecSent[tag] = {False}
+			if not DecSent[tag]:
+			    if not tag in AccNum:
+			        AccNum[tag] = {0}
+		    	    AccNum[tag] += 1
+                    	    bal = data.split('#')[1]
+                    	    rid = data.split('#')[2]
+                    	    if (seqNum == '*' or AcceptNum <= (bal, rid)):
+			        if (AcceptNum <= (bal, rid)):
+                                    AcceptNum = (bal, rid)
+                                    AcceptVal = data.split('#')[3]
+				if not tag in AccSent:
+				    AccSent[tag] = {False}
+                                if not AccSent[tag]:
+			            AccSent[tag] = True
+                                send2All(data)
                     	    #if get accept from majority
-		    	    if (AccNum >= majority):
-		        	msg = "decide#" + AcceptVal + '#' + tag + '#' + seqNum
-		        	print "DEC: %s to all" % msg
-                        	send2All(msg)
-				#DecSent = True
+		    	        if (AccNum[tag] >= majority):
+		        	    msg = "decide#" + AcceptVal + '#' + tag + '#' + seqNum
+		        	    print "DEC: %s to all" % msg
+                        	    send2All(msg)
+				    DecSent[tag] = True
             	    elif data.split('#')[0] == "decide":
 			if not inHistory(tag):
 			    DEC_H.append(tag)
