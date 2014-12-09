@@ -31,7 +31,7 @@ Sync = False
 BallotNum = (0, pid)
 AcceptNum = (0, 0)
 AcceptVal = 0
-AckNum = 0
+AckNum = {}
 AccNum = {}
 AckHighVal = 0
 AckHighBal = (0, 0)
@@ -165,13 +165,15 @@ def waitForClient(index):
 			if not tag in AccSent:
                             AccSent[tag] = False
 		        if not AccSent[tag]:
-                            AckNum += 1
+			    if not tag in AckNum:
+				AckNum[tag] = 0
+                            AckNum[tag] = int(AckNum[tag]) + 1
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
                     	    if (AckHighBal <= (bal, rid)):
 				AckHighBal = (bal, rid)
                         	AckHighVal = data.split('#')[5]
-                    	    if (AckNum >= majority):
+                    	    if (AckNum[tag] >= majority):
 		        	AcceptVal = AckHighVal
                         	if (str(AcceptVal) == str(0) or seqNum == '*'):
                             	    AcceptVal = InitVal
@@ -211,7 +213,6 @@ def waitForClient(index):
 				    print "SUCCESS"
 		    	        else:
 				    print "FAILURE"
-			
 			    log.append(float(data.split('#')[1]))
                 	    reset_local_state()
 	    	    else:
@@ -248,7 +249,7 @@ def send2All(msg):
 	    send2Server(msg, i)
 
 def reset_local_state():
-    global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent, DecSent
+    global AcceptNum, AcceptVal, AckNum, AckHighVal, AckHighBal, InitVal
     print "reseting local state"
     AcceptNum = (0, 0)
     AcceptVal = 0
