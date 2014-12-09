@@ -7,9 +7,9 @@ import threading
 import time
 
 log = []
-IP = ["0.0.0.0", "54.67.122.117", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
-PORT = [12000, 12345, 12335, 12334, 12333]
-pid = 1
+IP = ['0.0.0.0', '54.183.98.181', '54.174.243.159', '54.76.12.134', '54.169.32.184']
+PORT = [16000, 10004, 11004, 12004, 13004]
+pid = 4
 
 #comm vars
 mutex = threading.Lock()
@@ -45,15 +45,15 @@ def queryServer(index):
         try:
     	    #print ("Querying server %s" % IP[index])
 	    OUT_SOCK[index].connect((IP[index], PORT[index]))
-	    #print ("Connect established with server %s" % IP[index])
+	    print ("Connect established with server %s" % IP[index])
 	    liveness[index] = True
 	    mutex.acquire()
 	    live += 1
-	    #print "# of live server: %d" % live
+	    print "# of live server: %d" % live
 	    if (Sync is False) and (index != 0):
 		Sync = True
 	        mutex.release()
-		#print "SYNC: %s" % IP[index]
+		print "SYNC: %s" % IP[index]
 	        send2Server("syncreq", index)
 	    else:	    
 	        mutex.release()
@@ -76,12 +76,12 @@ def waitForClient(index):
 		liveness[index] = False
 		live = live - 1
 	    break
-	#print ("Waiting for client %d" % index)
+	print ("Waiting for client %d" % index)
 	IN_SOCK[index].listen(0)
         CONN[index], addr = IN_SOCK[index].accept()
 	liveness[index] = True
 	CONN[index].setblocking(0)
-	#print addr
+	print addr
 	# listen loop
 	while True:
 	    # unblocking loop
@@ -107,7 +107,7 @@ def waitForClient(index):
 		print "Server %s is dead!" % IP[index]
 		liveness[index] = False
 		live = live - 1
-		#print "# of live server: %d" % live
+		print "# of live server: %d" % live
 		if live < majority:
 		    print "Warning: not enough live servers!"
 		thread.start_new_thread(queryServer, (index, ))
@@ -116,7 +116,7 @@ def waitForClient(index):
 		if data == str(''):
 		    continue
                 mutex.acquire()
-	    	#print "recieved data %s from server %s: " % (data.split('#'), index)
+	    	print "recieved data %s from server %s: " % (data.split('#'), index)
 	        # if client asks for sync
 	        if data.split('#')[0] == 'syncreq':
 		    msg = 'syncack'
@@ -138,7 +138,7 @@ def waitForClient(index):
 	        # PAXOS msg
 	        # if the msg is withdraw and is stale
 	        elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
-		    #print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
+		    print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		    mutex.release()
 	        else:
 		    seqNum = data.split('#')[len(data.split('#'))-1]
@@ -150,7 +150,7 @@ def waitForClient(index):
 			if (AcceptNum <= (bal, rid)):
                     	    AcceptNum = (bal, rid)
 		    	    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
-		    	    #print "ACK: %s to server %d" % (msg, index)
+		    	    print "ACK: %s to server %d" % (msg, index)
                     	    send2Server(msg, index)
                     elif data.split('#')[0] == "ack":
 		        if not AccSent:
@@ -165,7 +165,7 @@ def waitForClient(index):
                         	if (str(AcceptVal) == str(0)):
                             	    AcceptVal = InitVal
 				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
-				#print "ACC: %s to all" % msg
+				print "ACC: %s to all" % msg
                         	send2All(msg)
 		        	AccSent = True
             	    elif data.split('#')[0] == "accept":
@@ -182,7 +182,7 @@ def waitForClient(index):
                     	    #if get accept from majority
 		    	    if (AccNum >= majority):
 		        	msg = "decide#" + AcceptVal + '#' + str(seqNum)
-		        	#print "DEC: %s to all" % msg
+		        	print "DEC: %s to all" % msg
                         	send2All(msg)
 				DecSent = True
             	    elif data.split('#')[0] == "decide":
