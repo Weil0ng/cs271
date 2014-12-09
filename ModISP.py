@@ -7,16 +7,17 @@ import threading
 import time
 
 log = []
-IP = ["0.0.0.0", "54.67.122.117", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
-PORT = [12000, 12345, 12335, 12334, 12333]
-pid = 1
+IP = ["0.0.0.0", "54.77.101.231", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
+PORT = [12000, 12345, 12344, 12343, 12342]
+pid = 0
+DEC_H = []
 
 #comm vars
 mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 0.1
+POLL_RATE = 1
 
 #Cross instance vars
 BUFFER_SIZE = 2048
@@ -30,13 +31,19 @@ Sync = False
 BallotNum = (0, pid)
 AcceptNum = (0, 0)
 AcceptVal = 0
-AckNum = 0
-AccNum = 0
+AckNum = {}
+AccNum = {}
 AckHighVal = 0
 AckHighBal = (0, 0)
 InitVal = 0
-AccSent = False
-DecSent = False
+AccSent = {}
+DecSent = {}
+
+def inHistory(ballot):
+    for item in DEC_H:
+	if ballot == item:
+	    return True
+    return False
 
 def queryServer(index):
     retry = 0
@@ -49,7 +56,7 @@ def queryServer(index):
 	    liveness[index] = True
 	    mutex.acquire()
 	    live += 1
-	    print "# of live server: %d" % live
+	    #print "# of live server: %d" % live
 	    if (Sync is False) and (index != 0):
 		Sync = True
 	        mutex.release()
@@ -81,7 +88,7 @@ def waitForClient(index):
         CONN[index], addr = IN_SOCK[index].accept()
 	liveness[index] = True
 	CONN[index].setblocking(0)
-	print addr
+	#print addr
 	# listen loop
 	while True:
 	    # unblocking loop
@@ -95,7 +102,7 @@ def waitForClient(index):
 		    time.sleep(float(1/POLL_RATE))
 	    # end of unblockign loop
 	    if halt:
-		print "CLOSE %d" % index
+		#print "CLOSE %d" % index
                 CONN[index].close()
 		if liveness[index]:
 		    OUT_SOCK[index].close()
@@ -107,7 +114,7 @@ def waitForClient(index):
 		print "Server %s is dead!" % IP[index]
 		liveness[index] = False
 		live = live - 1
-		print "# of live server: %d" % live
+		#print "# of live server: %d" % live
 		if live < majority:
 		    print "Warning: not enough live servers!"
 		thread.start_new_thread(queryServer, (index, ))
@@ -116,7 +123,7 @@ def waitForClient(index):
 		if data == str(''):
 		    continue
                 mutex.acquire()
-	    	print "recieved data %s from server %s: " % (data.split('#'), index)
+	    	#print "recieved data %s from server %s: " % (data.split('#'), index)
 	        # if client asks for sync
 	        if data.split('#')[0] == 'syncreq':
 		    msg = 'syncack'
@@ -137,65 +144,80 @@ def waitForClient(index):
 		    mutex.release()
 	        # PAXOS msg
 	        # if the msg is withdraw and is stale
-	        elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
-		    print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
+	        elif not data.split('#')[len(data.split('#'))-1] == '*' and not data.split('#')[len(data.split('#'))-1] == str(len(log)):
+		    #print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		    mutex.release()
 	        else:
 		    seqNum = data.split('#')[len(data.split('#'))-1]
+		    tag = data.split('#')[len(data.split('#'))-2]
 	            if data.split('#')[0] == 'prepare':
 			bal = data.split('#')[1]
 			rid = data.split('#')[2]
 			# if Ballot < bal, set ballot, join
-			print "bal: %s, rid: %s" % (bal, rid)
-			if (AcceptNum <= (bal, rid)):
-                    	    AcceptNum = (bal, rid)
-		    	    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
-		    	    print "ACK: %s to server %d" % (msg, index)
+			#print "bal: %s, rid: %s" % (bal, rid)
+			if (seqNum == '*' or AcceptNum <= (bal, rid)):
+			    if (AcceptNum <= (bal, rid)):
+                    	        AcceptNum = (bal, rid)
+		    	    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + tag + '#' + seqNum
+		    	    #print "ACK: %s to server %d" % (msg, index)
                     	    send2Server(msg, index)
                     elif data.split('#')[0] == "ack":
-		        if not AccSent:
-                            AckNum += 1
+			if not tag in AccSent:
+                            AccSent[tag] = False
+		        if not AccSent[tag]:
+			    if not tag in AckNum:
+				AckNum[tag] = 0
+                            AckNum[tag] = int(AckNum[tag]) + 1
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
                     	    if (AckHighBal <= (bal, rid)):
 				AckHighBal = (bal, rid)
                         	AckHighVal = data.split('#')[5]
-                    	    if (AckNum >= majority):
+                    	    if (AckNum[tag] >= majority):
 		        	AcceptVal = AckHighVal
-                        	if (str(AcceptVal) == str(0)):
+                        	if (str(AcceptVal) == str(0) or seqNum == '*'):
                             	    AcceptVal = InitVal
-				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
-				print "ACC: %s to all" % msg
+				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + tag + '#' + seqNum
+				#print "ACC: %s to all" % msg
                         	send2All(msg)
-		        	AccSent = True
+		        	AccSent[tag] = True
             	    elif data.split('#')[0] == "accept":
-			if not DecSent:
-		    	    AccNum += 1
+			if not tag in DecSent:
+			    DecSent[tag] = False
+			if not DecSent[tag]:
+			    if not tag in AccNum:
+			        AccNum[tag] = 0
+		    	    AccNum[tag] = int(AccNum[tag]) + 1
                     	    bal = data.split('#')[1]
                     	    rid = data.split('#')[2]
-                    	    if (AcceptNum <= (bal, rid)):
-                        	AcceptNum = (bal, rid)
-                        	AcceptVal = data.split('#')[3]
-                        	if not AccSent:
-			    	    AccSent = True
-                            	    send2All(data)
-                    	    #if get accept from majority
-		    	    if (AccNum >= majority):
-		        	msg = "decide#" + AcceptVal + '#' + str(seqNum)
-		        	print "DEC: %s to all" % msg
-                        	send2All(msg)
-				DecSent = True
+                    	    if (seqNum == '*' or AcceptNum <= (bal, rid)):
+			        if (AcceptNum <= (bal, rid)):
+                                    AcceptNum = (bal, rid)
+                                AcceptVal = data.split('#')[3]
+				if not tag in AccSent:
+				    AccSent[tag] = False
+                                if not AccSent[tag]:
+			            AccSent[tag] = True
+                                    send2All(data)
+                    	        #if get accept from majority
+		    	        if (AccNum[tag] >= majority):
+		        	    msg = "decide#" + str(AcceptVal) + '#' + tag + '#' + seqNum
+		        	    #print "DEC: %s to all" % msg
+                        	    send2All(msg)
+				    DecSent[tag] = True
             	    elif data.split('#')[0] == "decide":
-			if InitVal != 0:
-		    	    if float(InitVal) == float(data.split('#')[1]):
-				print "SUCCESS"
-		    	    else:
-				print "FAILURE"
-			log.append(float(data.split('#')[1]))
-                	reset_local_state()
+			if not inHistory(tag):
+			    DEC_H.append(tag)
+			    if InitVal != 0 and seqNum != '*':
+		    	        if float(InitVal) == float(data.split('#')[1]):
+				    print "SUCCESS"
+		    	        else:
+				    print "FAILURE"
+			    log.append(float(data.split('#')[1]))
+                	    reset_local_state()
 	    	    else:
                 	print "Unknown Msg!"
-			print data
+			#print data
     	    	    mutex.release()
                 
 def init_conn():
@@ -227,24 +249,30 @@ def send2All(msg):
 	    send2Server(msg, i)
 
 def reset_local_state():
-    global AcceptNum, AcceptVal, AckNum, AccNum, AckHighVal, AckHighBal, InitVal, AccSent, DecSent
-    print "reseting local state"
+    global AcceptNum, AcceptVal, AckHighVal, AckHighBal, InitVal
+    #print "reseting local state"
     AcceptNum = (0, 0)
     AcceptVal = 0
-    AckNum = 0
-    AccNum = 0
+    #AckNum = 0
+    #AccNum = 0
     AckHighVal = 0
     AckHighBal = (0, 0)
     InitVal = 0
-    AccSent = False
-    DecSent = False 
+    #AccSent = False
+    #DecSent = False 
 
 def init_paxos(val):
     global BallotNum, InitVal
     BallotNum = (BallotNum[0] + 1, BallotNum[1])
+    tag = str(BallotNum)
     InitVal = val
-    # attach with seq num
-    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
+    if val < 0:
+        # attach with seq num
+        msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + tag + '#' + str(len(log))
+    # if deposit, give wild card
+    else:
+	msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + tag + '#*'
+	print "SUCCESS"
     print msg
     send2All(msg)
 
