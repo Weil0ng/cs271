@@ -7,16 +7,16 @@ import threading
 import time
 
 log = []
-IP = ['0.0.0.0', '54.183.98.181', '54.174.243.159', '54.76.12.134', '54.169.32.184']
-PORT = [16000, 10004, 11004, 12004, 13004]
-pid = 4
+IP = ['0.0.0.0', '54.183.98.181', '54.76.12.134', '54.169.32.184', '54.94.205.108']
+PORT = [16000, 10001, 11002, 11003, 11004]
+pid = 1
 
 #comm vars
 mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 0.1
+POLL_RATE = 0.5
 
 #Cross instance vars
 BUFFER_SIZE = 2048
