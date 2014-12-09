@@ -136,18 +136,18 @@ def waitForClient(index):
 		        log.append(float(item))
 		    mutex.release()
 	        # PAXOS msg
-	        # if the msg is stale
-	        elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
+	        # if the msg is withdraw and is stale
+	        elif not data.split('#')[len(data.split('#'))-1] == '*' and not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		    print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		    mutex.release()
 	        else:
-		    seqNum = int(data.split('#')[len(data.split('#'))-1])
+		    seqNum = data.split('#')[len(data.split('#'))-1]
 	            if data.split('#')[0] == 'prepare':
 			bal = data.split('#')[1]
 			rid = data.split('#')[2]
 			# if Ballot < bal, set ballot, join
 			print "bal: %s, rid: %s" % (bal, rid)
-			if (AcceptNum <= (bal, rid)):
+			if (seqNum != '*' and AcceptNum <= (bal, rid)):
                     	    AcceptNum = (bal, rid)
 		    	    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
 		    	    print "ACK: %s to server %d" % (msg, index)
@@ -157,6 +157,7 @@ def waitForClient(index):
                             AckNum += 1
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
+			    #TODO
                     	    if (AckHighBal <= (bal, rid)):
 				AckHighBal = (bal, rid)
                         	AckHighVal = data.split('#')[5]
@@ -243,8 +244,12 @@ def init_paxos(val):
     global BallotNum, InitVal
     BallotNum = (BallotNum[0] + 1, BallotNum[1])
     InitVal = val
-    # attach with seq num
-    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
+    if val < 0:
+        # attach with seq num
+        msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
+    # if deposit, give wild card
+    else:
+        msg =  msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#*')
     print msg
     send2All(msg)
 
@@ -260,12 +265,12 @@ class CmdInterpreter(cmd.Cmd):
     def do_deposit(self, arg):
 	global halt
 	if not halt:
-	    init_paxos(arg)
+	    init_paxos(float(arg))
 
     def do_withdraw(self, arg):
 	global halt
 	if not halt:
-	    init_paxos(-1.0*int(arg))
+	    init_paxos(-1.0*float(arg))
     
     def do_balance(self, arg):
 	global halt
