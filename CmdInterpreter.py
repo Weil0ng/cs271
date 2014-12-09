@@ -32,12 +32,12 @@ BallotNum = (0, pid)
 AcceptNum = (0, 0)
 AcceptVal = 0
 AckNum = 0
-dict AccNum = {}
+AccNum = {}
 AckHighVal = 0
 AckHighBal = (0, 0)
 InitVal = 0
-dict AccSent = {}
-dict DecSent = {}
+AccSent = {}
+DecSent = {}
 
 def inHistory(ballot):
     for item in DEC_H:
