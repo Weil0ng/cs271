@@ -249,11 +249,11 @@ def send2All(msg):
 	    send2Server(msg, i)
 
 def reset_local_state():
-    global AcceptNum, AcceptVal, AckNum, AckHighVal, AckHighBal, InitVal
+    global AcceptNum, AcceptVal, AckHighVal, AckHighBal, InitVal
     print "reseting local state"
     AcceptNum = (0, 0)
     AcceptVal = 0
-    AckNum = 0
+    #AckNum = 0
     #AccNum = 0
     AckHighVal = 0
     AckHighBal = (0, 0)
