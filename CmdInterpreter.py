@@ -193,7 +193,7 @@ def waitForClient(index):
                     	    if (seqNum == '*' or AcceptNum <= (bal, rid)):
 			        if (AcceptNum <= (bal, rid)):
                                     AcceptNum = (bal, rid)
-                                    AcceptVal = data.split('#')[3]
+                                AcceptVal = data.split('#')[3]
 				if not tag in AccSent:
 				    AccSent[tag] = False
                                 if not AccSent[tag]:
