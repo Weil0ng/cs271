@@ -16,7 +16,7 @@ mutex = threading.Lock()
 OUT_SOCK = [None] * len(IP)
 IN_SOCK = [None] * len(IP)
 CONN = [None] * len(IP)
-POLL_RATE = 1
+POLL_RATE = 0.1
 
 #Cross instance vars
 BUFFER_SIZE = 2048
