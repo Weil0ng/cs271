@@ -208,7 +208,7 @@ def waitForClient(index):
             	    elif data.split('#')[0] == "decide":
 			if not inHistory(tag):
 			    DEC_H.append(tag)
-			    if InitVal != 0 and seqNum != '*':
+			    if InitVal != 0:
 		    	        if float(InitVal) == float(data.split('#')[1]):
 				    print "SUCCESS"
 		    	        else:
@@ -272,7 +272,6 @@ def init_paxos(val):
     # if deposit, give wild card
     else:
 	msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + tag + '#*'
-	print "SUCCESS"
     print msg
     send2All(msg)
 
