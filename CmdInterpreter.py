@@ -199,7 +199,7 @@ def waitForClient(index):
                                     send2All(data)
                     	        #if get accept from majority
 		    	        if (AccNum[tag] >= majority):
-		        	    msg = "decide#" + AcceptVal + '#' + tag + '#' + seqNum
+		        	    msg = "decide#" + str(AcceptVal) + '#' + tag + '#' + seqNum
 		        	    print "DEC: %s to all" % msg
                         	    send2All(msg)
 				    DecSent[tag] = True
