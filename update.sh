@@ -1,5 +1,5 @@
 #!/bin/bash
 
-git checkout -f master
+git checkout -f demo
 git pull
 ./replace.sh
