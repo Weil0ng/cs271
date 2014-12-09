@@ -7,9 +7,9 @@ import threading
 import time
 
 log = []
-IP = ["0.0.0.0", "54.77.101.231", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
-PORT = [12000, 12345, 12344, 12343, 12342]
-pid = 0
+IP = ["0.0.0.0", "54.67.122.117", "54.94.225.51", "54.169.32.184", "54.86.55.27"]
+PORT = [12000, 12345, 12335, 12334, 12333]
+pid = 1
 
 #comm vars
 mutex = threading.Lock()
@@ -147,7 +147,7 @@ def waitForClient(index):
 			rid = data.split('#')[2]
 			# if Ballot < bal, set ballot, join
 			print "bal: %s, rid: %s" % (bal, rid)
-			if (seqNum != '*' and AcceptNum <= (bal, rid)):
+			if (AcceptNum <= (bal, rid)):
                     	    AcceptNum = (bal, rid)
 		    	    msg = "ack#" + bal + '#' + rid + '#' + str(AcceptNum[0]) + '#' + str(AcceptNum[1]) + '#' + str(AcceptVal) + '#' + str(seqNum)
 		    	    print "ACK: %s to server %d" % (msg, index)
@@ -157,7 +157,6 @@ def waitForClient(index):
                             AckNum += 1
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
-			    #TODO
                     	    if (AckHighBal <= (bal, rid)):
 				AckHighBal = (bal, rid)
                         	AckHighVal = data.split('#')[5]
@@ -249,7 +248,7 @@ def init_paxos(val):
         msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
     # if deposit, give wild card
     else:
-        msg =  msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#*')
+	msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(InitVal) + '#*'
     print msg
     send2All(msg)
 
