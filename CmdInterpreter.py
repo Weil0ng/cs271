@@ -137,7 +137,7 @@ def waitForClient(index):
 		    mutex.release()
 	        # PAXOS msg
 	        # if the msg is withdraw and is stale
-	        elif not data.split('#')[len(data.split('#'))-1] == '*' and not data.split('#')[len(data.split('#'))-1] == str(len(log)):
+	        elif not data.split('#')[len(data.split('#'))-1] == str(len(log)):
 		    print "Sequence num %d not match %d! Aborting msg!" % (int(data.rsplit('#')[len(data.split('#'))-1]), len(log))
 		    mutex.release()
 	        else:
@@ -243,12 +243,8 @@ def init_paxos(val):
     global BallotNum, InitVal
     BallotNum = (BallotNum[0] + 1, BallotNum[1])
     InitVal = val
-    if val < 0:
-        # attach with seq num
-        msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
-    # if deposit, give wild card
-    else:
-	msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(InitVal) + '#*'
+    # attach with seq num
+    msg = "prepare#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(len(log))
     print msg
     send2All(msg)
 
