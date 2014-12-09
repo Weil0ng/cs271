@@ -36,7 +36,7 @@ AccNum = {}
 AckHighVal = 0
 AckHighBal = (0, 0)
 InitVal = 0
-AccSent = False
+AccSent = {}
 DecSent = {}
 
 def inHistory(ballot):
@@ -162,7 +162,9 @@ def waitForClient(index):
 		    	    print "ACK: %s to server %d" % (msg, index)
                     	    send2Server(msg, index)
                     elif data.split('#')[0] == "ack":
-		        if not AccSent:
+			if not tag in AccSent:
+                            AccSent[tag] = False
+		        if not AccSent[tag]:
                             AckNum += 1
                     	    bal = data.split('#')[3]
                     	    rid = data.split('#')[4]
@@ -176,7 +178,7 @@ def waitForClient(index):
 				msg = "accept#" + str(BallotNum[0]) + '#' + str(BallotNum[1]) + '#' + str(AcceptVal) + '#' + tag + '#' + seqNum
 				print "ACC: %s to all" % msg
                         	send2All(msg)
-		        	#AccSent = True
+		        	AccSent[tag] = True
             	    elif data.split('#')[0] == "accept":
 			if not tag in DecSent:
 			    DecSent[tag] = False
@@ -194,7 +196,7 @@ def waitForClient(index):
 				    AccSent[tag] = False
                                 if not AccSent[tag]:
 			            AccSent[tag] = True
-                                send2All(data)
+                                    send2All(data)
                     	        #if get accept from majority
 		    	        if (AccNum[tag] >= majority):
 		        	    msg = "decide#" + AcceptVal + '#' + tag + '#' + seqNum
@@ -255,7 +257,7 @@ def reset_local_state():
     AckHighVal = 0
     AckHighBal = (0, 0)
     InitVal = 0
-    AccSent = False
+    #AccSent = False
     #DecSent = False 
 
 def init_paxos(val):
